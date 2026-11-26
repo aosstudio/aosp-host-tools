@@ -1,0 +1,136 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Install bootstrap build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-21 build-essential pkg-config libssl-dev patch
+
+      - name: Build bootstrap tools
+        run: make build-bootstrap PYTHON=python BUILD_JOBS=4
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aosp-host-tools-bootstrap-linux-x86_64
+          path: out/dist/*-bootstrap-*-linux-x86_64.tar.gz
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+
+      - name: Verify bootstrap tools
+        run: make verify-bootstrap PYTHON=python
+
+  tools:
+    needs: bootstrap
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [generators, java]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: aosp-host-tools-bootstrap-linux-x86_64
+          path: out/dist
+
+      - name: Install native build dependencies
+        if: matrix.group == 'generators'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            clang-21 llvm-21 build-essential cmake ninja-build pkg-config patch \
+            zlib1g-dev libpng-dev libexpat1-dev protobuf-compiler python3-protobuf
+
+      - name: Build host tools
+        env:
+          TOOL_GROUP: ${{ matrix.group }}
+        run: make "build-$TOOL_GROUP" PYTHON=python BUILD_JOBS=4
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aosp-host-tools-${{ matrix.group }}-linux-x86_64
+          path: out/dist/*-${{ matrix.group }}-*-linux-x86_64.tar.gz
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+
+      - name: Verify host tools
+        env:
+          TOOL_GROUP: ${{ matrix.group }}
+        run: make "verify-$TOOL_GROUP" PYTHON=python
+
+  publish:
+    needs: [bootstrap, tools]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    concurrency:
+      group: nightly-release
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: aosp-host-tools-*-linux-x86_64
+          path: out/dist
+          merge-multiple: true
+
+      - name: Publish nightly release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          shopt -s nullglob
+          assets=()
+          for group in bootstrap generators java; do
+            packages=(out/dist/aosstudio-aosp-host-tools-"$group"-*-linux-x86_64.tar.gz)
+            test "${#packages[@]}" -eq 1
+            test -s "${packages[0]}"
+            assets+=("${packages[0]}")
+          done
+
+          tag=latest
+          ref=$(gh api "repos/$GH_REPO/git/matching-refs/tags/$tag" \
+            --jq '.[] | select(.ref == "refs/tags/latest") | .ref')
+          if [[ -n "$ref" ]]; then
+            gh api --silent --method PATCH "repos/$GH_REPO/git/refs/tags/$tag" \
+              -f "sha=$GITHUB_SHA" -F force=true
+          else
+            gh api --silent --method POST "repos/$GH_REPO/git/refs" \
+              -f "ref=refs/tags/$tag" -f "sha=$GITHUB_SHA"
+          fi
+
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" "${assets[@]}" --clobber
+            gh release edit "$tag" --draft=false --prerelease --latest=false \
+              --title 'Nightly build' --notes ''
+          else
+            gh release create "$tag" "${assets[@]}" --verify-tag --prerelease --latest=false \
+              --title 'Nightly build' --notes ''
+          fi

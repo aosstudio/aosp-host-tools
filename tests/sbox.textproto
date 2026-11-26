@@ -1,0 +1,4 @@
+commands {
+  command: "printf '%s\\n' 37 > __SBOX_SANDBOX_DIR__/probe.txt"
+  copy_after { from: "probe.txt" to: "sandbox-output/probe.txt" }
+}

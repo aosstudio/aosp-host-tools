@@ -1,0 +1,72 @@
+Limit the standalone Cargo build to the originally qualified host CLI and its dependencies.
+
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,16 +1,7 @@
+ [workspace]
++members = ["aconfig", "aconfig_protos", "aconfig_storage_file", "convert_finalized_flags"]
++resolver = "2"
+ 
+-members = [
+-    "aconfig",
+-    "aconfig_device_paths",
+-    "aconfig_protos",
+-    "aconfig_storage_file",
+-    "aconfig_storage_read_api",
+-    "aconfig_storage_write_api",
+-    "aflags",
+-    "convert_finalized_flags",
+-    "finalize_non_api_flags",
+-    "exported_flag_check",
+-]
+-
+-resolver = "2"
++[patch.crates-io]
++cxx = { path = "../../../../external/rust/cxx" }
++cxx-build = { path = "../../../../external/rust/cxx/gen/build" }
+--- a/aconfig/Cargo.toml
++++ b/aconfig/Cargo.toml
+@@ -11,8 +11,8 @@
+ 
+ [dependencies]
+ anyhow = { path = "../../../../../external/rust/android-crates-io/crates/anyhow" }
+-clap = { path = "../../../../../external/rust/android-crates-io/crates/clap", features = ["derive", "string"] }
+-itertools = "0.10.5"
++clap = { path = "../../../../../external/rust/android-crates-io/crates/clap", default-features = false, features = ["derive", "error-context", "help", "std", "string", "suggestions", "usage"] }
++itertools = "0.14.0"
+ protobuf = "3.2.0"
+ serde = { version = "1.0.152", features = ["derive"] }
+ serde_json = "1.0.93"
+@@ -25,7 +25,7 @@
+ 
+ [build-dependencies]
+ anyhow = { path = "../../../../../external/rust/android-crates-io/crates/anyhow" }
+-itertools = "0.10.5"
++itertools = "0.14.0"
+ serde = { version = "1.0.152", features = ["derive"] }
+ serde_json = "1.0.93"
+ convert_finalized_flags = { path = "../convert_finalized_flags" }
+--- a/aconfig_storage_file/Cargo.toml
++++ b/aconfig_storage_file/Cargo.toml
+@@ -12,8 +12,8 @@
+ anyhow = { path = "../../../../../external/rust/android-crates-io/crates/anyhow" }
+ protobuf = "3.2.0"
+ tempfile = "3.9.0"
+-thiserror = "1.0.56"
+-clap = { path = "../../../../../external/rust/android-crates-io/crates/clap", features = ["derive"] }
++thiserror = "2.0.16"
++clap = { path = "../../../../../external/rust/android-crates-io/crates/clap", default-features = false, features = ["derive", "error-context", "help", "std", "string", "suggestions", "usage"] }
+ cxx = "1.0"
+ serde = { version = "1.0.152", features = ["derive"] }
+ serde_json = "1.0.93"
+--- a/convert_finalized_flags/Cargo.toml
++++ b/convert_finalized_flags/Cargo.toml
+@@ -10,7 +10,7 @@
+ 
+ [dependencies]
+ anyhow = { path = "../../../../../external/rust/android-crates-io/crates/anyhow" }
+-clap = { path = "../../../../../external/rust/android-crates-io/crates/clap", features = ["derive"] }
++clap = { path = "../../../../../external/rust/android-crates-io/crates/clap", default-features = false, features = ["derive", "error-context", "help", "std", "string", "suggestions", "usage"] }
+ serde = { version = "1.0.152", features = ["derive"] }
+ serde_json = "1.0.93"
+ tempfile = "3.13.0"
