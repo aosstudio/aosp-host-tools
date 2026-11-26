@@ -1,0 +1,143 @@
+Use the PoC-verified Linux Cargo dependency graph for aconfig.
+
+--- a/vendor/errno-0.3.14/Cargo.toml
++++ b/vendor/errno-0.3.14/Cargo.toml
+@@ -54,13 +54,6 @@
+ version = "0.2"
+ default-features = false
+ 
+-[target."cfg(windows)".dependencies.windows-sys]
+-version = ">=0.52, <0.62"
+-features = [
+-    "Win32_Foundation",
+-    "Win32_System_Diagnostics_Debug",
+-]
+-
+ [lints.rust.unexpected_cfgs]
+ level = "warn"
+ priority = 0
+--- a/vendor/getrandom-0.3.4/Cargo.toml
++++ b/vendor/getrandom-0.3.4/Cargo.toml
+@@ -84,14 +84,6 @@
+ optional = true
+ default-features = false
+ 
+-[target.'cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p2"))'.dependencies.wasip2]
+-version = "1"
+-default-features = false
+-
+-[target.'cfg(all(target_os = "uefi", getrandom_backend = "efi_rng"))'.dependencies.r-efi]
+-version = "5.1"
+-default-features = false
+-
+ [target.'cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "hurd", target_os = "illumos", target_os = "cygwin", all(target_os = "horizon", target_arch = "arm")))'.dependencies.libc]
+ version = "0.2.154"
+ default-features = false
+--- a/vendor/rustix-1.0.7/Cargo.toml
++++ b/vendor/rustix-1.0.7/Cargo.toml
+@@ -197,7 +197,7 @@
+ [dev-dependencies.tempfile]
+ version = "3.5.0"
+ 
+-[target.'cfg(all(any(target_os = "android", target_os = "linux"), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_endian = "little", any(target_arch = "s390x", target_arch = "powerpc")), any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc"), all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "s390x"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))'.dependencies.linux-raw-sys]
++[target.'cfg(all(any(target_os = "linux"), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_endian = "little", any(target_arch = "s390x", target_arch = "powerpc")), any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc"), all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "s390x"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))'.dependencies.linux-raw-sys]
+ version = "0.9.2"
+ features = [
+     "general",
+@@ -239,21 +239,6 @@
+ version = "0.3.10"
+ default-features = false
+ package = "errno"
+-
+-[target."cfg(windows)".dependencies.libc_errno]
+-version = "0.3.10"
+-default-features = false
+-package = "errno"
+-
+-[target."cfg(windows)".dependencies.windows-sys]
+-version = ">=0.52, <0.60"
+-features = [
+-    "Win32_Foundation",
+-    "Win32_Networking_WinSock",
+-]
+-
+-[target."cfg(windows)".dev-dependencies.once_cell]
+-version = "1.20.3"
+ 
+ [lints.rust.unexpected_cfgs]
+ level = "warn"
+@@ -276,6 +261,7 @@
+     "cfg(linux_kernel)",
+     "cfg(linux_like)",
+     "cfg(linux_raw)",
++    "cfg(linux_raw_dep)",
+     "cfg(netbsdlike)",
+     "cfg(rustc_attrs)",
+     "cfg(solarish)",
+--- a/vendor/same-file-1.0.6/Cargo.toml
++++ b/vendor/same-file-1.0.6/Cargo.toml
+@@ -25,5 +25,3 @@
+ repository = "https://github.com/BurntSushi/same-file"
+ [dev-dependencies.doc-comment]
+ version = "0.3"
+-[target."cfg(windows)".dependencies.winapi-util]
+-version = "0.1.1"
+--- a/vendor/tempfile-3.23.0/Cargo.toml
++++ b/vendor/tempfile-3.23.0/Cargo.toml
+@@ -89,9 +89,3 @@
+ optional = true
+ default-features = false
+ 
+-[target."cfg(windows)".dependencies.windows-sys]
+-version = ">=0.52, <0.62"
+-features = [
+-    "Win32_Storage_FileSystem",
+-    "Win32_Foundation",
+-]
+--- a/vendor/walkdir-2.5.0/Cargo.toml
++++ b/vendor/walkdir-2.5.0/Cargo.toml
+@@ -39,9 +39,6 @@
+ [dev-dependencies.doc-comment]
+ version = "0.3"
+ 
+-[target."cfg(windows)".dependencies.winapi-util]
+-version = "0.1.1"
+-
+ [badges.appveyor]
+ repository = "BurntSushi/walkdir"
+ 
+--- a/vendor/which-4.4.0/Cargo.toml
++++ b/vendor/which-4.4.0/Cargo.toml
+@@ -46,5 +46,3 @@
+ [dev-dependencies.tempfile]
+ version = "3.3.0"
+ 
+-[target."cfg(windows)".dependencies.once_cell]
+-version = "1"
+--- a/vendor/winapi-util-0.1.11/Cargo.toml
++++ b/vendor/winapi-util-0.1.11/Cargo.toml
+@@ -44,11 +44,3 @@
+ name = "winapi_util"
+ path = "src/lib.rs"
+ 
+-[target."cfg(windows)".dependencies.windows-sys]
+-version = ">=0.48.0, <=0.61.*"
+-features = [
+-    "Win32_Foundation",
+-    "Win32_Storage_FileSystem",
+-    "Win32_System_Console",
+-    "Win32_System_SystemInformation",
+-]
+--- a/source/external/rust/cxx/Cargo.toml
++++ b/source/external/rust/cxx/Cargo.toml
+@@ -46,10 +46,6 @@
+ trybuild = { version = "1.0.108", features = ["diff"] }
+ 
+ # Disallow incompatible version appearing in the same lockfile.
+-[target.'cfg(any())'.build-dependencies]
+-cxx-build = { version = "=1.0.189", path = "gen/build" }
+-cxxbridge-cmd = { version = "=1.0.189", path = "gen/cmd" }
+-
+ [workspace]
+ members = ["demo", "flags", "gen/build", "gen/cmd", "gen/lib", "macro", "tests/ffi"]
+ 

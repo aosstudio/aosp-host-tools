@@ -1,0 +1,17 @@
+Handle an empty input to ckati file reads.
+
+Upstream: https://github.com/google/kati/tree/81362a8030f5639195cda24a3e651892c0a185f4
+
+diff --git a/src/func.cc b/src/func.cc
+index b3e544c..1b77370 100644
+--- a/src/func.cc
++++ b/src/func.cc
+@@ -884,7 +884,7 @@ static void FileReadFunc_(Evaluator* ev,
+     ev->Error("*** close failed.");
+   }
+ 
+-  if (out.back() == '\n') {
++  if (!out.empty() && out.back() == '\n') {
+     out.pop_back();
+   }
+ 
