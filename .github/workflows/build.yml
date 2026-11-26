@@ -86,7 +86,7 @@ jobs:
 
   publish:
     needs: [bootstrap, tools]
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-26.04
     permissions:
       contents: write
